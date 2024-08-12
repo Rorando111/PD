@@ -1,0 +1,69 @@
+function notifemail() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Celeste");
+
+  // Fetch values for each week (Week 1 to Week 6)
+  var weeks = [
+    sheet.getRange("M6:R6").getValues()[0],
+    sheet.getRange("M7:R7").getValues()[0],
+    sheet.getRange("M8:R8").getValues()[0],
+    sheet.getRange("M9:R9").getValues()[0],
+    sheet.getRange("M10:R10").getValues()[0],
+    sheet.getRange("M11:R11").getValues()[0]
+  ];
+
+  // Fetch the email address
+  var emailAddress = SpreadsheetApp.getActiveSpreadsheet()
+    .getSheetByName("Contact Info's")
+    .getRange("B6")
+    .getValue();
+
+  // Initialize flags for changes detected
+  var changesDetected = false;
+  var onlyCompleted = false;
+
+  // Get today's date
+  var today = new Date();
+  var dateToday = Utilities.formatDate(today, Session.getScriptTimeZone(), "MM-dd-yyyy");
+
+  // Loop through each week and prepare notifications
+  for (var i = weeks.length - 1; i >= 0; i--) {
+    var completed = weeks[i][0];
+    var minor = weeks[i][1];
+    var major = weeks[i][2];
+    var incomplete = weeks[i][3];
+    var excused = weeks[i][4];
+    var unchecked = weeks[i][5];
+
+    if (minor > 0 || major > 0 || incomplete > 0 || excused > 0 || unchecked > 0) {
+      changesDetected = true;
+      var message = 'Progress Report for Week ' + (i + 1) + ':\n\n' +
+              'Completed: ' + completed + '\n' +
+              'Minor Revisions: ' + minor + '\n' +
+              'Major Revisions: ' + major + '\n' +
+              'Incomplete Tasks: ' + incomplete + '\n' +
+              'Excused: ' + excused + '\n' +
+              'Unchecked: ' + unchecked + '\n\n' +
+              '---\n\n' +
+              'This is the summary of your status task(s) for Week ' + (i + 1) + ', compiled into a single report on ' + dateToday + '.\n' +
+              'Please check the remarks of your task and report the revisions or completed tasks to your Leader or Quality Assurance member for rechecking.\n\n' +
+              'Thank you.\n\n' +
+              'Best regards,\n' +
+              'Your Team';
+      var subject = 'Progress Report for Design Project - Week ' + (i + 1);
+      MailApp.sendEmail(emailAddress, subject, message);
+      break; // Exit the loop after sending the notification for the latest week
+    }
+
+    // Check if only completed has a value and others are 0
+    if (completed > 0 && minor === 0 && major === 0 && incomplete === 0) {
+      onlyCompleted = true;
+    }
+  }
+
+  // Send a message if only completed has a value
+  if (onlyCompleted) {
+    var message = 'Congratulations! You have completed your task for week ' + (i + 1) + ' with no pending revisions or incompletes. Await further instructions from your Leader/Quality Assurance member for your next task.';
+    var subject = 'Task Completion - Week ' + (i + 1);
+    MailApp.sendEmail(emailAddress, subject, message);
+  }
+}
